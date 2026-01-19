@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企業情報 | メカメカほりほり実行委員会</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #00695C;    /* 知的グリーン */
+            --dark: #263238;       /* 濃いグレー */
+            --light-gray: #f5f5f5; /* 背景グレー */
+            --border: #e0e0e0;     /* 枠線 */
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif; /* 本文は読みやすいゴシック体 */
+            color: #333;
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+            background-color: #fff;
+            padding-top: 80px; /* ヘッダー固定分 */
+        }
+
+        /* --- ヘッダー（企業サイト風） --- */
+        .corp-header {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: #fff; border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+        .header-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 20px;
+            height: 80px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo a {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            font-size: 1.5rem; font-weight: 900; color: #000; text-decoration: none;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo small { font-size: 0.7rem; color: #666; font-weight: normal; margin-top: 4px; }
+        
+        /* PC用ナビゲーション */
+        .global-nav { display: flex; gap: 30px; }
+        .global-nav a {
+            text-decoration: none; color: #333; font-weight: 500; font-size: 0.9rem;
+            position: relative; transition: color 0.3s;
+        }
+        .global-nav a:hover { color: var(--primary); }
+        .nav-btn {
+            background: #333; color: #fff !important; padding: 10px 20px;
+            border-radius: 4px; font-size: 0.85rem !important;
+        }
+
+        /* --- パンくずリスト --- */
+        .breadcrumbs {
+            background: var(--light-gray); padding: 10px 0; font-size: 0.8rem; color: #666;
+        }
+        .breadcrumbs-inner { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+        .breadcrumbs a { text-decoration: none; color: #666; }
+        .breadcrumbs span { margin: 0 5px; }
+
+        /* --- コンテンツエリア --- */
+        .main-content { max-width: 1000px; margin: 0 auto; padding: 60px 20px; }
+
+        h1 { font-size: 2.2rem; margin-bottom: 10px; border-bottom: none; }
+        .page-lead { color: #666; margin-bottom: 60px; font-size: 1.1rem; }
+
+        /* セクション共通 */
+        section { margin-bottom: 80px; }
+        h2 {
+            font-size: 1.5rem; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 30px;
+            display: flex; align-items: baseline; justify-content: space-between;
+        }
+        h2 span { font-size: 0.9rem; color: #999; font-weight: normal; }
+
+        h3 { font-size: 1.2rem; color: var(--primary); margin: 30px 0 15px; }
+
+        /* 代表挨拶 */
+        .message-grid { display: grid; grid-template-columns: 200px 1fr; gap: 40px; margin-top: 30px; }
+        .rep-image {
+            width: 100%; height: 200px; background: #eee; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; color: #aaa;
+        }
+        .message-text p { margin-bottom: 20px; text-align: justify; }
+        .signature { margin-top: 30px; text-align: right; font-weight: bold; }
+
+        /* 会社概要テーブル（無印風） */
+        .company-table { width: 100%; border-collapse: collapse; border-top: 1px solid #ddd; }
+        .company-table th, .company-table td {
+            padding: 20px; border-bottom: 1px solid #ddd; text-align: left; vertical-align: top;
+        }
+        .company-table th { width: 25%; background: #f9f9f9; font-weight: normal; color: #666; }
+
+        /* 事業内容（アイコン付き） */
+        .service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .service-card {
+            border: 1px solid #eee; padding: 20px; border-radius: 8px; transition: box-shadow 0.3s;
+        }
+        .service-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .service-title { font-weight: bold; margin-bottom: 10px; color: var(--primary); }
+
+        /* --- フッター（パナソニック/ドコモ風） --- */
+        .corp-footer { background: #f4f4f4; color: #333; border-top: 4px solid var(--primary); font-size: 0.85rem; }
+        .footer-links {
+            max-width: 1200px; margin: 0 auto; padding: 50px 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 30px;
+        }
+        .footer-col h4 { font-size: 0.9rem; margin-bottom: 15px; color: #000; }
+        .footer-col ul { list-style: none; padding: 0; }
+        .footer-col li { margin-bottom: 10px; }
+        .footer-col a { text-decoration: none; color: #666; transition: color 0.2s; }
+        .footer-col a:hover { text-decoration: underline; color: var(--primary); }
+
+        .footer-bottom { background: #fff; padding: 20px 0; text-align: center; border-top: 1px solid #ddd; }
+        .footer-bottom small { color: #999; font-size: 0.7rem; }
+
+        /* レスポンシブ */
+        @media (max-width: 768px) {
+            .header-inner { height: auto; padding: 15px 20px; flex-direction: column; gap: 15px; }
+            .global-nav { flex-wrap: wrap; justify-content: center; gap: 15px; }
+            .message-grid { grid-template-columns: 1fr; }
+            .rep-image { height: 150px; width: 150px; margin: 0 auto; }
+            .company-table th, .company-table td { display: block; width: 100%; padding: 10px 0; }
+            .company-table th { background: transparent; padding-bottom: 0; font-weight: bold; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="corp-header">
+    <div class="header-inner">
+        <div class="logo">
+            <a href="index.html">
+                メカメカほりほり
+                <small>実行委員会</small>
+            </a>
+        </div>
+        <nav class="global-nav">
+            <a href="#">ニュース</a>
+            <a href="#">事業紹介</a>
+            <a href="#">サステナビリティ</a>
+            <a href="#">IR・投資家情報</a>
+            <a href="#" class="nav-btn">お問い合わせ</a>
+        </nav>
+    </div>
+</header>
+
+<div class="breadcrumbs">
+    <div class="breadcrumbs-inner">
+        <a href="index.html">ホーム</a> <span>&gt;</span> 企業情報
+    </div>
+</div>
+
+<div class="main-content">
+    
+    <div class="page-header">
+        <h1>企業情報</h1>
+        <p class="page-lead">「工学×恐竜」で未来のエンジニアを掘り起こす。<br>私たちは遊びと学びの境界線をなくすクリエイティブ集団です。</p>
+    </div>
+
+    <section>
+        <h2>トップメッセージ <span>Top Message</span></h2>
+        <div class="message-grid">
+            <div class="rep-image">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="#ddd"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </div>
+            <div class="message-text">
+                <h3>「理科離れ」を解決し、技術立国の未来を創る</h3>
+                <p>
+                    現代の子どもたちの「理科離れ」が叫ばれて久しい昨今、私たちはこの課題に対して真正面から向き合っています。
+                    教科書の中の勉強としてではなく、子どもたちが大好きな「恐竜」というテーマを通じて、自然と工学やテクノロジーに触れられる機会を作りたい。そんな想いから「メカメカほりほり」は生まれました。
+                </p>
+                <p>
+                    私が所属する工学部の現場でも、技術者の不足は深刻な課題です。企業は優秀な理系人材を求めています。一方で、子どもたちは「新しい遊び場」を求めています。
+                    この両者をマッチングさせ、企業様から資材（おがくずや左官材）を提供いただきながら、子どもたちにワクワクする体験を提供する。
+                    そして、その体験をした子どもたちが将来エンジニアとなり、また次の世代へ技術を伝えていく。
+                    そんな「知と人材の循環」を、ここ福井から生み出していきたいと考えています。
+                </p>
+                <div class="signature">
+                    メカメカほりほり実行委員会<br>
+                    代表　田中 将斗
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>事業概要 <span>Business Outline</span></h2>
+        <div class="service-grid">
+            <div class="service-card">
+                <div class="service-title">🦕 3Dプリント化石事業</div>
+                <p>3Dプリンタを活用し、精巧な恐竜の化石レプリカを製造。従来の「何も見つからない」発掘体験とは異なり、必ず成果物が得られる体験を設計しています。</p>
+            </div>
+            <div class="service-card">
+                <div class="service-title">📱 IoT・アプリ開発事業</div>
+                <p>化石にNFCタグを内蔵し、スマートフォンとかざすだけで情報にアクセスできるシステムの開発。コレクション機能や図鑑機能を持つアプリを展開予定。</p>
+            </div>
+            <div class="service-card">
+                <div class="service-title">♻️ 地域連携・イベント事業</div>
+                <p>県内企業から提供された「おがくず」等を活用した、環境に優しく安全な発掘フィールドの設営。全天候型の屋内イベント運営。</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>会社概要 <span>Company Profile</span></h2>
+        <table class="company-table">
+            <tr>
+                <th>団体名</th>
+                <td>メカメカほりほり実行委員会</td>
+            </tr>
+            <tr>
+                <th>代表者</th>
+                <td>田中 将斗（福井大学 工学部 機械システム工学科）</td>
+            </tr>
+            <tr>
+                <th>設立</th>
+                <td>2025年 10月30日</td>
+            </tr>
+            <tr>
+                <th>所在地</th>
+                <td>〒910-0021<br>福井県福井市乾徳3丁目10-28 コムシエソワ 201</td>
+            </tr>
+            <tr>
+                <th>事業内容</th>
+                <td>
+                    ・3Dプリント技術を用いた教材開発<br>
+                    ・イベント企画・運営（恐竜発掘体験）<br>
+                    ・IoT技術を活用したアプリケーション開発
+                </td>
+            </tr>
+            <tr>
+                <th>主要取引先・協力</th>
+                <td>
+                    福井県内 製造関連企業<br>
+                    福井県内 建築関連企業（資材提供）
+                </td>
+            </tr>
+            <tr>
+                <th>連絡先</th>
+                <td>ha239068@g.u-fukui.ac.jp<br>070-1763-3141</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>将来の展望 <span>Future Vision</span></h2>
+        <p>
+            現在はイベントベースでの活動ですが、将来的には福井県立恐竜博物館付近や駅前エリアへの「常設店舗」の出店を目指しています。
+            また、開発中のアプリには「金の恐竜の歯」などのレアアイテム要素や、天候連動型の出現ロジックを実装し、リピーターが楽しめるゲーミフィケーション要素を強化していきます。
+        </p>
+    </section>
+
+</div>
+
+<footer class="corp-footer">
+    <div class="footer-links">
+        <div class="footer-col">
+            <h4>商品・サービス</h4>
+            <ul>
+                <li><a href="index.html">メカメカほりほり アプリ</a></li>
+                <li><a href="#">イベント情報</a></li>
+                <li><a href="#">3Dプリント技術</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>企業情報</h4>
+            <ul>
+                <li><a href="#">トップメッセージ</a></li>
+                <li><a href="#">事業概要</a></li>
+                <li><a href="#">沿革</a></li>
+                <li><a href="#">サステナビリティ</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>サポート</h4>
+            <ul>
+                <li><a href="#">よくあるご質問</a></li>
+                <li><a href="#">お問い合わせ</a></li>
+                <li><a href="privacy.html">プライバシーポリシー</a></li>
+                <li><a href="#">サイトのご利用にあたって</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>関連リンク</h4>
+            <ul>
+                <li><a href="#">福井大学</a></li>
+                <li><a href="#">福井県立恐竜博物館</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <small>© 2026 Mecha-Mecha Hori-Hori Project. All Rights Reserved.</small>
+    </div>
+</footer>
+
+</body>
+</html>
