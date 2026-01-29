@@ -4,20 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>メカメカほりほり | 化石図鑑</title>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
     <style>
-        /* CSSは構造的に完成されているため、そのまま維持します */
+        /* --- デザイン設定 --- */
         :root {
-            --primary: #5D4037;
-            --accent: #FFAB00; 
-            --pop: #FF7043;
-            --bg-color: #EFEBE9;
-            --shelf-bg: #8D6E63;
-            --shelf-shadow: #5D4037;
-            --text-dark: #3E2723;
+            --primary: #5D4037; --accent: #FFAB00; --pop: #FF7043;
+            --bg-color: #EFEBE9; --shelf-bg: #8D6E63; --shelf-shadow: #5D4037;
+            --text-dark: #3E2723; --onsen-bg: #D7CCC8; --onsen-border: #4E342E;
+            --onsen-text: #3E2723; --onsen-btn: #3E2723;
         }
 
         body {
@@ -26,9 +25,8 @@
             background-image: radial-gradient(#D7CCC8 1px, transparent 1px);
             background-size: 20px 20px;
             color: var(--text-dark);
-            margin: 0; padding: 0; line-height: 1.8;
-            padding-top: 60px;
-            overflow-x: hidden;
+            margin: 0; padding: 60px 0 0; line-height: 1.8;
+            overflow-x: hidden; overscroll-behavior: none; 
         }
 
         .container { max-width: 800px; margin: 0 auto; padding: 20px 15px 80px; box-sizing: border-box; }
@@ -40,20 +38,9 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 1000;
             padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;
         }
-        
         .header-logo { 
-            display: flex; align-items: center; 
-            text-decoration: none; cursor: pointer; 
-        }
-        .header-logo img {
-            height: 36px;
-            width: auto;
-            margin-right: 8px;
-        }
-        .header-logo span {
-            font-weight: 900; 
-            color: var(--primary); 
-            font-size: 1.1rem;
+            text-decoration: none; cursor: pointer;
+            font-weight: 900; color: var(--primary); font-size: 1.4rem;
         }
 
         /* ヒーローエリア */
@@ -63,7 +50,6 @@
             margin-bottom: 20px; letter-spacing: 0.05em; text-shadow: 2px 2px 0 #fff;
             line-height: 1.4;
         }
-        
         .hero-logo-box {
             display: inline-block; padding: 10px 30px; border-radius: 15px;
             background: #fff; box-shadow: 6px 6px 0 var(--accent);
@@ -72,15 +58,12 @@
         }
         .hero-logo-box h1 { margin: 0; font-size: 2.2rem; color: var(--primary); letter-spacing: 0.05em; line-height: 1.2; }
 
-        /* 棚エリア */
+        /* 棚（グリッド） */
         .shelf-container {
             background: var(--shelf-bg);
-            padding: 15px;
-            border-radius: 10px;
+            padding: 15px; border-radius: 10px;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.2), 0 10px 0 var(--shelf-shadow);
-            margin-top: 20px;
-            position: relative;
-            z-index: 1;
+            margin-top: 20px; position: relative; z-index: 1;
         }
         .shelf-container::before {
             content: "COLLECTION";
@@ -90,75 +73,36 @@
         }
 
         .collection-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px 10px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px 10px;
         }
 
         .fossil-item {
-            background: #fff;
-            border-radius: 8px;
-            aspect-ratio: 1 / 1;
-            position: relative;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: 2px solid #D7CCC8;
-            transition: transform 0.2s;
-            overflow: visible; 
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        @media (hover: hover) {
-            .fossil-item:hover {
-                transform: scale(1.05);
-                z-index: 100;
-                border-color: var(--pop);
-            }
+            background: #fff; border-radius: 8px; aspect-ratio: 1 / 1;
+            position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; border: 2px solid #D7CCC8;
+            transition: transform 0.2s; overflow: visible; 
+            user-select: none; -webkit-tap-highlight-color: transparent;
         }
         .fossil-item:active { transform: scale(0.95); }
 
         .fossil-item.locked { background: #ECEFF1; }
-        .fossil-item.locked img {
-            filter: brightness(0) opacity(0.2);
-            transform: scale(0.8);
-        }
+        .fossil-item.locked img { filter: brightness(0) opacity(0.2); transform: scale(0.8); }
         .fossil-item.locked::after {
             content: "?"; position: absolute; font-size: 2rem;
-            color: rgba(0,0,0,0.1); font-weight: 900;
-            pointer-events: none;
+            color: rgba(0,0,0,0.1); font-weight: 900; pointer-events: none;
         }
 
-        .fossil-item.unlocked {
-            border-color: var(--accent);
-            background: #FFF8E1;
-        }
-        .fossil-item.unlocked img {
-            animation: pukaPuka 3s ease-in-out infinite;
-        }
+        .fossil-item.unlocked { border-color: var(--accent); background: #FFF8E1; }
+        .fossil-item.unlocked img { animation: pukaPuka 3s ease-in-out infinite; }
         
         .fossil-item.selected {
-            border-color: var(--pop);
-            box-shadow: 0 0 0 4px rgba(255, 112, 67, 0.3);
-            background: #fff;
+            border-color: var(--pop); box-shadow: 0 0 0 4px rgba(255, 112, 67, 0.3); background: #fff;
         }
         
-        /* 追加: 一覧（図鑑）内のコピーライト表示 */
         .grid-copyright {
-            position: absolute;
-            bottom: 2px;
-            right: 5px;
-            font-size: 0.5rem;
-            color: #5D4037;
-            font-weight: bold;
-            opacity: 0.6;
-            pointer-events: none;
-            z-index: 5;
-            white-space: nowrap;
+            position: absolute; bottom: 2px; right: 5px; font-size: 0.5rem;
+            color: #5D4037; font-weight: bold; opacity: 0.6; pointer-events: none; z-index: 5; white-space: nowrap;
         }
 
         .fossil-item.coming-soon { background: #D7CCC8; cursor: default; }
@@ -176,7 +120,7 @@
         }
         .just-unlocked { animation: flashEffect 0.6s ease-out forwards; }
 
-        /* キラキラ */
+        /* パーティクル */
         .sparkle-particle {
             position: absolute; top: 50%; left: 50%; width: 15px; height: 15px;
             background: radial-gradient(circle, #fff 20%, #FFD700 100%);
@@ -190,7 +134,6 @@
             100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(180deg); opacity: 0; }
         }
 
-        /* ツールチップ */
         .tooltip-box {
             position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%) scale(0.8);
             opacity: 0; pointer-events: none;
@@ -206,53 +149,34 @@
         }
         .fossil-item:hover .tooltip-box { transform: translateX(-50%) scale(1); opacity: 1; bottom: 110%; }
 
-
-        /* --- 詳細エリア --- */
+        /* 詳細エリア */
         .detail-section {
-            display: none;
-            margin-top: 30px;
-            background: #fff;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            border: 4px solid var(--primary);
-            animation: slideUp 0.5s ease-out;
-            text-align: center;
+            display: none; margin-top: 30px; background: #fff; border-radius: 15px; padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1); border: 4px solid var(--primary);
+            animation: slideUp 0.5s ease-out; text-align: center;
         }
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
         .detail-title {
             font-size: 1.8rem; margin: 0 0 20px; color: var(--primary);
             border-bottom: 2px dashed #D7CCC8; padding-bottom: 10px;
         }
         .detail-image-box {
             background: #FFF8E1; border-radius: 10px; padding: 20px;
-            display: inline-block; margin-bottom: 20px;
-            border: 2px solid var(--accent);
+            display: inline-block; margin-bottom: 20px; border: 2px solid var(--accent);
         }
         .detail-img-large {
             max-width: 100%; height: auto; max-height: 200px;
             filter: drop-shadow(0 4px 0 rgba(0,0,0,0.1));
             animation: pukaPuka 4s ease-in-out infinite;
         }
-        /* 詳細画像の著作権表示 */
         .img-copyright {
-            display: block;
-            font-size: 0.75rem;
-            color: #5D4037;
-            margin-top: 8px;
-            text-align: right;
-            font-weight: bold;
-            opacity: 0.8;
+            display: block; font-size: 0.75rem; color: #5D4037; margin-top: 8px;
+            text-align: right; font-weight: bold; opacity: 0.8;
         }
-
-        .detail-table {
-            width: 100%; border-collapse: collapse; margin-bottom: 20px;
-            font-size: 0.9rem;
-        }
+        .detail-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9rem; }
         .detail-table th {
             background: var(--primary); color: #fff; padding: 8px;
             border: 1px solid var(--primary); width: 30%;
@@ -261,37 +185,232 @@
             background: #fff; padding: 8px; border: 1px solid #D7CCC8;
             color: var(--text-dark); font-weight: bold;
         }
-
         .detail-desc-text {
             text-align: left; background: #EFEBE9; padding: 15px;
             border-radius: 8px; font-size: 0.9rem; line-height: 1.8;
             border-left: 5px solid var(--pop);
         }
 
-        /* --- UIパーツ --- */
-        .scroll-top-btn {
-            position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
-            background: var(--pop); color: #fff; border: none; border-radius: 50%;
-            font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            cursor: pointer; z-index: 900; display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.2s;
+        /* パズルモード */
+        .puzzle-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); z-index: 5000;
+            flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; touch-action: none;
         }
-        .scroll-top-btn.show { opacity: 1; pointer-events: auto; }
-        .scroll-top-btn:active { transform: scale(0.9); }
+        .puzzle-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
 
-        /* --- デバッグモード（フローティング） --- */
+        .puzzle-title {
+            color: #fff; font-size: 1.5rem; font-weight: 900;
+            margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); pointer-events: none;
+        }
+        
+        .puzzle-container {
+            position: relative; width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .puzzle-target {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            opacity: 0.5; filter: brightness(0) invert(1); pointer-events: none; z-index: 1;
+            width: auto; height: auto; max-width: 80%; max-height: 80%; object-fit: contain;
+        }
+        
+        .puzzle-piece {
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
+            cursor: grab; z-index: 10;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+            touch-action: none; transition: none; 
+            width: auto; height: auto; max-width: 80%; max-height: 80%; object-fit: contain;
+        }
+        
+        .puzzle-piece:active { cursor: grabbing; transform: scale(1.05); }
+        .puzzle-piece.can-snap { filter: drop-shadow(0 0 20px #FFD700) brightness(1.2); }
+        .puzzle-piece.snapped {
+            transition: all 0.3s ease-in-out !important; 
+            filter: drop-shadow(0 0 30px var(--accent)); pointer-events: none;
+        }
+        .puzzle-instruction {
+            color: #FFAB00; font-weight: bold; margin-top: 30px;
+            background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px;
+            pointer-events: none;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* スポンサー・観光エリア */
+        .sponsor-area {
+            margin-top: 40px; margin-bottom: 20px; text-align: center; padding: 20px;
+            background: #fff; border-radius: 10px; border: 2px dashed #D7CCC8; position: relative;
+        }
+        .sponsor-text { font-size: 0.7rem; color: #5D4037; margin-bottom: 15px; font-weight: bold; }
+        .sponsor-link-container { display: inline-block; position: relative; }
+        .sponsor-hint {
+            display: block; font-size: 0.6rem; color: var(--pop);
+            margin-bottom: 5px; font-weight: bold; animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-5px);}
+            60% {transform: translateY(-3px);}
+        }
+        .sponsor-link {
+            display: inline-block; text-decoration: none;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.1));
+        }
+        .sponsor-link:hover, .sponsor-link:active {
+            transform: scale(1.08) translateY(-5px); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+        }
+        .sponsor-img { max-width: 200px; height: auto; display: block; margin: 0 auto; border-radius: 4px; }
+
+        /* 観光情報 */
+        .tourism-section {
+            margin-top: 25px; padding: 25px; background-color: var(--onsen-bg); 
+            border: 3px solid var(--onsen-border); border-radius: 12px; text-align: left;
+            position: relative; overflow: visible; box-shadow: 0 4px 0 rgba(78, 52, 46, 0.2);
+        }
+        .tourism-section::before {
+            content: "CHECK!"; position: absolute; top: 0; left: 0;
+            background: var(--onsen-border); color: #fff;
+            padding: 2px 10px; font-size: 0.7rem; font-weight: bold;
+            border-bottom-right-radius: 8px; border-top-left-radius: 8px; 
+        }
+        .tourism-title {
+            font-size: 1.2rem; color: var(--onsen-text); margin: 0 0 10px 0;
+            font-weight: 900; display: flex; align-items: center; gap: 5px;
+            border-bottom: 2px dotted var(--onsen-border); padding-bottom: 5px;
+        }
+        .tourism-desc { font-size: 0.95rem; margin-bottom: 15px; color: #4E342E; font-weight: 500; }
+        .tourism-photos { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .collab-img, .onsen-img {
+            width: 45%; border-radius: 8px; border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); object-fit: cover; aspect-ratio: 4/3;
+            background: #fff; transition: transform 0.3s ease;
+        }
+        .collab-img { object-fit: contain; background: #FFF8E1; } 
+        .collab-img:active, .onsen-img:active { transform: scale(0.95); }
+
+        .tourism-btn {
+            display: block; text-align: center; background: var(--onsen-btn); color: #fff;
+            text-decoration: none; padding: 12px; border-radius: 30px;
+            font-weight: bold; box-shadow: 0 4px 0 #271c19; 
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative; overflow: visible;
+        }
+        
+        .notification-badge {
+            position: absolute; top: -8px; right: -8px;
+            background-color: #f44336; color: #fff; 
+            width: 18px; height: 18px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 900; box-shadow: 0 2px 5px rgba(244, 67, 54, 0.6);
+            z-index: 10; animation: pulse-size 1s infinite alternate; 
+            border: 1px solid #fff;
+        }
+        @keyframes pulse-size { from { transform: scale(1); } to { transform: scale(1.25); } }
+        .tourism-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #271c19; }
+        .tourism-btn:hover { transform: scale(1.02); }
+
+        /* カメラ機能 */
+        .camera-fab {
+            position: fixed; bottom: 20px; left: 20px;
+            width: 60px; height: 60px;
+            background: #fff; border: 4px solid var(--pop);
+            border-radius: 50%; color: var(--text-dark);
+            font-size: 2rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer; z-index: 950;
+            transition: transform 0.2s;
+        }
+        .camera-fab:active { transform: scale(0.9); }
+
+        .camera-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 6000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .camera-overlay.active { display: flex; }
+
+        #camera-video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* スキャン演出 */
+        .scan-frame {
+            position: absolute; top: 10%; left: 10%; width: 80%; height: 60%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 20px; pointer-events: none;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        .scan-frame::before, .scan-frame::after {
+            content: ""; position: absolute; width: 20px; height: 20px;
+            border-color: #00E5FF; border-style: solid;
+        }
+        .scan-frame::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; }
+        .scan-frame::after { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; }
+
+        .scan-line {
+            position: absolute; top: 10%; left: 10%; width: 80%; height: 2px;
+            background: #00E5FF; box-shadow: 0 0 10px #00E5FF;
+            animation: scanMove 2s infinite linear; opacity: 0.7; pointer-events: none;
+        }
+        @keyframes scanMove {
+            0% { top: 10%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 70%; opacity: 0; }
+        }
+
+        .camera-message {
+            position: absolute; top: 72%; color: #00E5FF; font-weight: bold;
+            font-size: 0.9rem; text-shadow: 0 0 5px #000;
+            background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 15px;
+        }
+
+        /* AI結果 */
+        .ai-result-box {
+            position: absolute; top: 60%; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8); color: #00E5FF;
+            padding: 10px 20px; border-radius: 8px; border: 2px solid #00E5FF;
+            font-weight: bold; font-size: 1rem; text-align: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            z-index: 6100; box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+        }
+        .ai-result-box.show { opacity: 1; }
+
+        .camera-controls {
+            position: absolute; bottom: 30px; width: 100%;
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .camera-action-btn {
+            border: none; color: #fff; font-weight: bold; cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .camera-action-btn.close {
+            background: #D32F2F; padding: 10px 20px; border-radius: 30px; font-size: 0.9rem;
+        }
+        .camera-action-btn.shutter {
+            width: 70px; height: 70px; border-radius: 50%;
+            background: #fff; border: 5px solid #ccc;
+            position: relative;
+        }
+        .camera-action-btn.shutter::after {
+            content: ""; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); width: 55px; height: 55px;
+            background: #fff; border-radius: 50%; border: 2px solid #333;
+        }
+        .camera-action-btn.shutter:active { transform: scale(0.95); }
+
+        /* 開発者ツールエリア */
         .debug-area {
-            display: none; 
-            position: fixed; bottom: 20px; left: 20px; width: 320px;
-            text-align: center; padding: 0;
-            background: #fff; border: 2px solid #546E7A; border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 3000; overflow: hidden;
+            display: none; position: fixed; bottom: 90px; left: 20px; width: 320px; 
+            text-align: center; padding: 0; background: #fff;
+            border: 2px solid #546E7A; border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 3000; overflow: hidden;
         }
         .debug-header {
             background: #546E7A; color: #fff; padding: 8px;
-            cursor: move; font-weight: bold; font-size: 0.9rem;
-            user-select: none;
+            cursor: move; font-weight: bold; font-size: 0.9rem; user-select: none;
         }
         .debug-content { padding: 15px; }
         .debug-btn { 
@@ -303,20 +422,26 @@
         .toast {
             position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.7); color: white; padding: 8px 16px; border-radius: 20px;
-            font-size: 0.85rem; z-index: 4000; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+            font-size: 0.85rem; z-index: 7000; opacity: 0; transition: opacity 0.3s; pointer-events: none;
         }
         .toast.show { opacity: 1; }
+        
+        .scroll-top-btn {
+            position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
+            background: var(--pop); color: #fff; border: none; border-radius: 50%;
+            font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer; z-index: 900; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.2s;
+        }
+        .scroll-top-btn.show { opacity: 1; pointer-events: auto; }
 
-        footer { background: #4E342E; color: #D7CCC8; padding: 20px; text-align: center; font-size: 0.7rem; margin-top: 40px; }
+        footer { background: #4E342E; color: #D7CCC8; padding: 20px; text-align: center; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
 <header class="site-header">
-    <a href="#" class="header-logo" id="top-logo">
-        <img src="images/lab.png" alt="ラボのアイコン">
-        <span>メカメカほりほり</span>
-    </a>
+    <a href="index.html" class="header-logo">メカメカほりほり</a>
 </header>
 
 <div class="container">
@@ -334,39 +459,43 @@
         <h2 id="dino-info-name" class="detail-title">恐竜の名前</h2>
         
         <div class="detail-image-box">
-            <img id="dino-info-img" src="" class="detail-img-large" alt="">
+            <img id="dino-info-img" src="" class="detail-img-large" alt="化石の詳細画像">
             <div id="dino-img-copyright" class="img-copyright"></div>
         </div>
 
         <table class="detail-table">
-            <tr>
-                <th>名前の由来</th>
-                <td id="dino-info-name-origin">-</td>
-            </tr>
-            <tr>
-                <th>大きさ</th>
-                <td id="dino-info-size">-</td>
-            </tr>
-            <tr>
-                <th>重さ</th>
-                <td id="dino-info-weight">-</td>
-            </tr>
-            <tr>
-                <th>分類</th>
-                <td id="dino-info-class">-</td>
-            </tr>
-            <tr>
-                <th>時代</th>
-                <td id="dino-info-era">-</td>
-            </tr>
-            <tr>
-                <th>産出国</th>
-                <td id="dino-info-origin">-</td>
-            </tr>
+            <tr><th>名前の由来</th><td id="dino-info-name-origin">-</td></tr>
+            <tr><th>大きさ(全長)</th><td id="dino-info-size">-</td></tr>
+            <tr><th>重さ</th><td id="dino-info-weight">-</td></tr>
+            <tr><th>分類</th><td id="dino-info-class">-</td></tr>
+            <tr><th>時代</th><td id="dino-info-era">-</td></tr>
+            <tr><th>産出国</th><td id="dino-info-origin">-</td></tr>
         </table>
 
-        <div id="dino-info-desc" class="detail-desc-text">
-            ここに詳しい説明が入ります。
+        <div id="dino-info-desc" class="detail-desc-text">ここに詳しい説明が入ります。</div>
+
+        <div id="tourism-container" style="display:none;">
+            <div class="tourism-section">
+                <h3 class="tourism-title" id="tourism-title">🦕 観光恐竜コラム</h3>
+                <p class="tourism-desc" id="tourism-desc">ここに観光情報が入ります。</p>
+                <div class="tourism-photos">
+                    <img id="tourism-dino-img" src="" class="collab-img" alt="恐竜">
+                    <img id="tourism-spot-img" src="" class="onsen-img" alt="観光地">
+                </div>
+                <a href="#" target="_blank" class="tourism-btn" id="tourism-link">
+                    公式サイトへGO! <div class="notification-badge">!</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="sponsor-area">
+        <div class="sponsor-text">本化石の発掘には株式会社アサノ不燃『不燃木材（スサノヲ）』を使用しています</div>
+        <div class="sponsor-link-container">
+            <span class="sponsor-hint">▼ 画像をタップで会社情報をチェック！ ▼</span>
+            <a href="https://funen.jp/susanoh" target="_blank" class="sponsor-link">
+                <img src="images/asanofune_logo.jpg" alt="株式会社アサノ不燃" class="sponsor-img">
+            </a>
         </div>
     </div>
 
@@ -386,6 +515,32 @@
     </div>
 </div>
 
+<button id="camera-open-btn" class="camera-fab">📷</button>
+
+<div id="camera-overlay" class="camera-overlay">
+    <video id="camera-video" autoplay playsinline muted></video>
+    
+    <div class="scan-frame"></div>
+    <div class="scan-line"></div>
+    <div class="camera-message">観光地をスキャン中...</div>
+    
+    <div id="ai-result-box" class="ai-result-box">AI準備中...</div>
+
+    <div class="camera-controls">
+        <button id="camera-close-btn" class="camera-action-btn close">とじる</button>
+        <button id="camera-shutter-btn" class="camera-action-btn shutter"></button>
+    </div>
+</div>
+
+<div id="puzzle-overlay" class="puzzle-overlay">
+    <div class="puzzle-title">FOSSIL FOUND!</div>
+    <div class="puzzle-container" id="puzzle-play-area">
+        <img id="puzzle-target" class="puzzle-target" src="" alt="target">
+        <img id="puzzle-piece" class="puzzle-piece" src="" alt="piece">
+    </div>
+    <p class="puzzle-instruction">スライドしてはめこもう！</p>
+</div>
+
 <div id="toast" class="toast"></div>
 <button id="scroll-top-btn" class="scroll-top-btn">▲</button>
 
@@ -394,104 +549,105 @@
 </footer>
 
 <audio id="sfx-sparkle" src="sparkle.mp3" preload="auto"></audio>
+<audio id="sfx-snap" src="snap.mp3" preload="auto"></audio>
 
 <script>
-    /**
-     * データ定義 (Data Model)
-     * innerHTMLを排除するため、改行が必要なテキストは配列で定義します。
-     * これによりXSS（クロスサイトスクリプティング）のリスクを極限まで減らします。
-     */
+    // --- AIモデルのロード (TensorFlow.js) ---
+    let aiModel = null;
+    const aiResultBox = document.getElementById('ai-result-box');
+
+    window.addEventListener('load', () => {
+        if (typeof cocoSsd !== 'undefined') {
+            cocoSsd.load().then(model => {
+                aiModel = model;
+                console.log("AI Model Loaded!");
+                if(aiResultBox) aiResultBox.innerText = "AIシステム: 準備完了";
+            }).catch(err => {
+                console.error("AI Model Load Error:", err);
+            });
+        }
+    });
+
     const fossils = [
         { 
             id: 'ammonite', name: 'アンモナイト', 
-            // 一覧はPNG
-            img: 'images/ammonite.png', 
-            // 詳細はJPG
-            detailImg: 'images/ammonite.jpg',
+            img: 'images/ammonite.png', detailImg: 'images/ammonite.jpg',
             hint: ['ぐるぐるしている…', '海にいたらしい'], 
             desc: ['【アンモナイト】', 'クリックで詳細を見る'],
             data: {
-                nameOrigin: 'アモン（エジプトの神）の角',
-                size: '数cm 〜 2m',
-                weight: '数g 〜 数十kg',
-                class: '頭足類（イカ・タコの仲間）',
-                era: 'デボン紀 〜 白亜紀',
-                origin: '世界中',
-                longDesc: '渦巻き状の殻を持っていた海の生き物だよ。恐竜が生きていた時代よりずっと前から、恐竜がいなくなるまで、長い間世界中の海で繁栄していたんだ。殻の中にガスや水を入れて、海の中をフワフワと漂っていたと考えられているよ。'
+                nameOrigin: 'アモン（エジプトの神）の角', size: '約2cm 〜 2m', weight: '数g 〜 数十kg',
+                class: '頭足類（イカ・タコの仲間）', era: 'デボン紀 〜 白亜紀 (末期)', origin: '世界中',
+                longDesc: '<ruby>渦巻<rt>うずま</rt></ruby>き<ruby>状<rt>じょう</rt></ruby>の<ruby>殻<rt>から</rt></ruby>を<ruby>持<rt>も</rt></ruby>っていた<ruby>海<rt>うみ</rt></ruby>の<ruby>生<rt>い</rt></ruby>き<ruby>物<rt>もの</rt></ruby>だよ。<ruby>恐竜<rt>きょうりゅう</rt></ruby>が<ruby>生<rt>い</rt></ruby>きていた<ruby>時代<rt>じだい</rt></ruby>よりずっと<ruby>前<rt>まえ</rt></ruby>から、<ruby>恐竜<rt>きょうりゅう</rt></ruby>がいなくなるまで、<ruby>長<rt>なが</rt></ruby>い<ruby>間<rt>あいだ</rt></ruby><ruby>世界中<rt>せかいじゅう</rt></ruby>の<ruby>海<rt>うみ</rt></ruby>で<ruby>繁栄<rt>はんえい</rt></ruby>していたんだ。<ruby>殻<rt>から</rt></ruby>の<ruby>中<rt>なか</rt></ruby>にガスや<ruby>水<rt>みず</rt></ruby>を<ruby>入<rt>い</rt></ruby>れて、<ruby>海<rt>うみ</rt></ruby>の<ruby>中<rt>なか</rt></ruby>をフワフワと<ruby>漂<rt>ただよ</rt></ruby>っていたと<ruby>考<rt>かんが</rt></ruby>えられているよ。',
+                tourism: {
+                    title: '絶景！東尋坊（とうじんぼう）',
+                    desc: 'アンモナイトは海にいたから、福井の海といえばここ！断崖絶壁の「東尋坊」！日本海の荒波が作り出した大迫力の景色を見に行こう！',
+                    link: 'https://kanko-sakai.com/tojinbo/', linkText: '東尋坊の詳細を見る',
+                    dinoImg: 'images/ammonite.png', spotImg: 'images/tojinbo.jpg'
+                }
             }
         },
         { 
             id: 'spino', name: 'スピノサウルス', 
-            // 一覧（透過PNG想定）
-            img: 'images/spinosaurus.png',
-            // 詳細はJPG
-            detailImg: 'images/spinosaurus.jpg',
-            // 著作権表示
-            imageCopyright: '© 2026 spinoりん',
-            hint: ['水辺で暮らしていた', '恐竜の歯…？'], 
-            desc: ['【スピノサウルス】', 'クリックで詳細を見る'],
+            img: 'images/spinosaurus.png', detailImg: 'images/spinosaurus.jpg', imageCopyright: '© 2024-2025 Spino りん',
+            hint: ['水辺で暮らしていた', '恐竜の歯…？'], desc: ['【スピノサウルス】', 'クリックで詳細を見る'],
             data: {
-                nameOrigin: 'トゲのあるトカゲ',
-                size: '全長 10 〜 18m',
-                weight: '6 〜 9トン',
-                class: '獣脚類（肉食恐竜）',
-                era: '白亜紀（前期）',
-                origin: 'エジプト、モロッコ',
-                longDesc: '背中にある大きな「帆」が特徴的な巨大な肉食恐竜だよ。ワニのように口が細長く、水辺で魚を捕まえて食べていたと考えられているんだ。史上最大級の肉食恐竜のひとつだと言われているよ！'
+                nameOrigin: '棘のあるトカゲ', size: '約14m', weight: '約7t',
+                class: '獣脚類（肉食恐竜）', era: '白亜紀後期 (セノマニアン)', origin: 'エジプト、モロッコ',
+                longDesc: '<ruby>背中<rt>せなか</rt></ruby>にある<ruby>大<rt>おお</rt></ruby>きな「<ruby>帆<rt>ほ</rt></ruby>」が<ruby>特徴的<rt>とくちょうてき</rt></ruby>な<ruby>巨大<rt>きょだい</rt></ruby>な<ruby>肉食<rt>にくしょく</rt></ruby><ruby>恐竜<rt>きょうりゅう</rt></ruby>だよ。ワニのように<ruby>口<rt>くち</rt></ruby>が<ruby>細長<rt>ほそなが</rt></ruby>く、<ruby>水辺<rt>みずべ</rt></ruby>で<ruby>魚<rt>さかな</rt></ruby>を<ruby>捕<rt>つか</rt></ruby>まえて<ruby>食<rt>た</rt></ruby>べていたと<ruby>考<rt>かんが</rt></ruby>えられているんだ。<ruby>史上<rt>しじょう</rt></ruby><ruby>最大級<rt>さいだいきゅう</rt></ruby>の<ruby>肉食<rt>にくしょく</rt></ruby><ruby>恐竜<rt>きょうりゅう</rt></ruby>のひとつだと<ruby>言<rt>い</rt></ruby>われているよ！',
+                tourism: {
+                    title: 'スピノサウルス × あわら温泉',
+                    desc: 'スピノサウルスは半水棲で水辺が大好きでした。福井で水といえば「あわら温泉」！発掘で疲れた体を、スピノサウルスと一緒に温泉で癒やしませんか？',
+                    link: 'https://www.awara-onsen.org/', linkText: 'あわら温泉の詳細を見る',
+                    dinoImg: 'images/spinosaurus.png', spotImg: 'images/awara_onsen.jpg' 
+                }
             }
         },
         { 
             id: 'trex', name: 'ティラノサウルス', 
-            // 一覧はPNG
-            img: 'images/tyrannosaurus.png',
-            // 詳細はJPG
-            detailImg: 'images/tyrannosaurus.jpg',
-            hint: ['最強の恐竜の', 'キバかもしれない…'], 
-            desc: ['【ティラノサウルス】', 'クリックで詳細を見る'],
+            img: 'images/tyrannosaurus.png', detailImg: 'images/tyrannosaurus.jpg',
+            hint: ['最強の恐竜の', 'キバかもしれない…'], desc: ['【ティラノサウルス】', 'クリックで詳細を見る'],
             data: {
-                nameOrigin: '暴君トカゲの王',
-                size: '全長 約13m',
-                weight: '6 〜 9トン',
-                class: '獣脚類（肉食恐竜）',
-                era: '白亜紀（後期）',
-                origin: 'アメリカ、カナダ',
-                longDesc: '「暴君トカゲの王」という意味の名前を持つ、もっとも有名な恐竜だね。太くて長い歯と、とてつもなく強いアゴの力で、獲物の骨まで噛み砕いてしまったと言われているよ。嗅覚もとても優れていたんだ。'
+                nameOrigin: '暴君トカゲの王', size: '約13m', weight: '約6t 〜 9t',
+                class: '獣脚類（肉食恐竜）', era: '白亜紀後期 (マーストリヒチアン)', origin: 'アメリカ、カナダ',
+                longDesc: '「<ruby>暴君<rt>ぼうくん</rt></ruby>トカゲの<ruby>王<rt>おう</rt></ruby>」という<ruby>意味<rt>いみ</rt></ruby>の<ruby>名前<rt>なまえ</rt></ruby>を<ruby>持<rt>も</rt></ruby>つ、もっとも<ruby>有名<rt>ゆうめい</rt></ruby>な<ruby>恐竜<rt>きょうりゅう</rt></ruby>だね。<ruby>太<rt>ふと</rt></ruby>くて<ruby>長<rt>なが</rt></ruby>い<ruby>歯<rt>は</rt></ruby>と、とてつもなく<ruby>強<rt>つよ</rt></ruby>いアゴの<ruby>力<rt>ちから</rt></ruby>で、<ruby>獲物<rt>えもの</rt></ruby>の<ruby>骨<rt>ほね</rt></ruby>まで<ruby>噛<rt>か</rt></ruby>み<ruby>砕<rt>くだ</rt></ruby>いてしまったと<ruby>言<rt>い</rt></ruby>われているよ。<ruby>嗅覚<rt>きゅうかく</rt></ruby>もとても<ruby>優<rt>すぐ</rt></ruby>れていたんだ。',
+                tourism: {
+                    title: '福井駅前の恐竜ロボット',
+                    desc: '北陸新幹線の福井開業で、福井駅前はまさに「恐竜王国」の玄関口！実物大の動くティラノサウルスロボットが大迫力でお出迎えしてくれるよ！',
+                    link: 'https://www.fukuicity-navi.com/100_dino/', linkText: '駅前の恐竜を見る',
+                    dinoImg: 'images/tyrannosaurus.png', spotImg: 'images/fukui_station_dino.jpg'
+                }
             }
         },
         { 
             id: 'trilobite', name: '三葉虫', 
-            // 一覧はPNG
-            img: 'images/trilobite.png', 
-            // 詳細はJPG
-            detailImg: 'images/trilobite.jpg',
-            hint: ['海の底を', 'はっていたらしい…'], 
-            desc: ['【三葉虫】', 'クリックで詳細を見る'],
+            img: 'images/trilobite.png', detailImg: 'images/trilobite.jpg',
+            hint: ['海の底を', 'はっていたらしい…'], desc: ['【三葉虫】', 'クリックで詳細を見る'],
             data: {
-                nameOrigin: '3つの葉（また）',
-                size: '数mm 〜 70cm',
-                weight: 'とっても軽い',
-                class: '節足動物',
-                era: 'カンブリア紀 〜 ペルム紀',
-                origin: '世界中',
-                longDesc: '今のダンゴムシやエビの遠い親戚だよ。体が「左・真ん中・右」の3つの部分に分かれているから「三葉虫」と呼ばれるんだ。恐竜が生まれるよりもずっと昔の海で、大繁栄していた生き物だよ。'
+                nameOrigin: '3つの葉（また）', size: '約5mm 〜 70cm', weight: 'とっても軽い',
+                class: '節足動物', era: 'カンブリア紀 〜 ペルム紀 (末期)', origin: '世界中',
+                longDesc: '<ruby>今<rt>いま</rt></ruby>のダンゴムシやエビの<ruby>遠<rt>とお</rt></ruby>い<ruby>親戚<rt>しんせき</rt></ruby>だよ。<ruby>体<rt>からだ</rt></ruby>が「<ruby>左<rt>ひだり</rt></ruby>・<ruby>真<rt>ま</rt></ruby>ん<ruby>中<rt>なか</rt></ruby>・<ruby>右<rt>みぎ</rt></ruby>」の3つの<ruby>部分<rt>ぶぶん</rt></ruby>に<ruby>分<rt>わ</rt></ruby>かれているから「<ruby>三葉虫<rt>さんようちゅう</rt></ruby>」と<ruby>呼<rt>よ</rt></ruby>ばれるんだ。<ruby>恐竜<rt>きょうりゅう</rt></ruby>が<ruby>生<rt>う</rt></ruby>まれるよりもずっと<ruby>昔<rt>むかし</rt></ruby>の<ruby>海<rt>うみ</rt></ruby>で、<ruby>大繁栄<rt>だいはんえい</rt></ruby>していた<ruby>生<rt>い</rt></ruby>き<ruby>物<rt>もの</rt></ruby>だよ。',
+                tourism: {
+                    title: '美しすぎる海！水晶浜',
+                    desc: '三葉虫は海の底を這っていたね。福井で海といえば、透明度抜群の「水晶浜（すいしょうはま）」！まるで宝石のようにキラキラ輝く砂浜に行ってみよう！',
+                    link: 'https://www.wakasa-mihama.jp/spot/suishohama/', linkText: '水晶浜の詳細を見る',
+                    dinoImg: 'images/trilobite.png', spotImg: 'images/suishohama.jpg' 
+                }
             }
         },
         { 
             id: 'fukuiraptor', name: 'フクイラプトル', 
-            // 一覧はPNG
-            img: 'images/fukuiraptor.png',
-            // 詳細はJPG
-            detailImg: 'images/fukuiraptor.jpg',
-            hint: ['日本で見つかった', '肉食恐竜のツメ…？'], 
-            desc: ['【フクイラプトル】', 'クリックで詳細を見る'],
+            img: 'images/fukuiraptor.png', detailImg: 'images/fukuiraptor.jpg', 
+            hint: ['日本で見つかった', '肉食恐竜のツメ…？'], desc: ['【フクイラプトル】', 'クリックで詳細を見る'], 
             data: {
-                nameOrigin: '福井の泥棒',
-                size: '全長 4.2m',
-                weight: '約300kg',
-                class: '獣脚類（メガラプトル類と考えられている）',
-                era: '白亜紀（前期）',
-                origin: '日本（福井県）',
-                longDesc: '日本の福井県勝山市で発見された肉食恐竜だよ！大きな手の爪が特徴なんだ。これを使って獲物を捕まえていたと考えられているよ。日本にもこんなにかっこいい恐竜がいたなんてすごいね！'
+                nameOrigin: '福井の泥棒', size: '約4.2m', weight: '約300kg',
+                class: '獣脚類（メガラプトル類と考えられている）', era: '白亜紀前期 (バレミアン)', origin: '日本（福井県）',
+                longDesc: '<ruby>日本<rt>にほん</rt></ruby>の<ruby>福井県<rt>ふくいけん</rt></ruby><ruby>勝山市<rt>かつやまし</rt></ruby>で<ruby>発見<rt>はっけん</rt></ruby>された<ruby>肉食<rt>にくしょく</rt></ruby><ruby>恐竜<rt>きょうりゅう</rt></ruby>だよ！<ruby>大<rt>おお</rt></ruby>きな<ruby>手<rt>て</rt></ruby>の<ruby>爪<rt>つめ</rt></ruby>が<ruby>特徴<rt>とくちょう</rt></ruby>なんだ。これを<ruby>使<rt>つか</rt></ruby>って<ruby>獲物<rt>えもの</rt></ruby>を<ruby>捕<rt>つか</rt></ruby>まえていたと<ruby>考<rt>かんが</rt></ruby>えられているよ。<ruby>日本<rt>にほん</rt></ruby>にもこんなにかっこいい<ruby>恐竜<rt>きょうりゅう</rt></ruby>がいたなんてすごいね！',
+                tourism: {
+                    title: '聖地！恐竜博物館',
+                    desc: 'フクイラプトルに会いたいならここしかない！世界三大恐竜博物館のひとつ、福井県立恐竜博物館へ行こう！',
+                    link: 'https://www.dinosaur.pref.fukui.jp/', linkText: '博物館のサイトへ',
+                    dinoImg: 'images/fukuiraptor.png', spotImg: 'images/fukui_museum.jpg'
+                }
             }
         },
         { id: 'coming1', type: 'coming_soon' },
@@ -500,39 +656,32 @@
         { id: 'coming4', type: 'coming_soon' }
     ];
 
-    /**
-     * データ管理 (State Management)
-     * 不正なデータによるクラッシュを防ぐホワイトリスト方式を採用
-     */
     let unlockedStatus = { ammonite: false, spino: false, trex: false, trilobite: false, fukuiraptor: false };
-    const SAVE_KEY = 'mechMechCollection_v2'; // キー名を変更して隠蔽性を少し向上
+    const SAVE_KEY = 'mechMechCollection_v2'; 
+    
+    // ▼ 観光リンクの訪問状態管理 ▼
+    let visitedLinks = {}; 
+    const TOURISM_KEY = 'mechMechTourism_v1';
 
     function loadStatus() {
         try {
             const saved = localStorage.getItem(SAVE_KEY);
-            if (!saved) return;
-            
-            const data = JSON.parse(saved);
-            // オブジェクトでない、またはnullの場合は無視
-            if (typeof data !== 'object' || data === null) return;
+            if (saved) {
+                const data = JSON.parse(saved);
+                Object.keys(unlockedStatus).forEach(key => {
+                    if (typeof data[key] === 'boolean') unlockedStatus[key] = data[key];
+                });
+            }
+            // 観光リンクの状態読み込み
+            const tourismSaved = localStorage.getItem(TOURISM_KEY);
+            if (tourismSaved) visitedLinks = JSON.parse(tourismSaved);
 
-            // 必要なキーだけをホワイトリスト方式で取り込む
-            Object.keys(unlockedStatus).forEach(key => {
-                if (typeof data[key] === 'boolean') {
-                    unlockedStatus[key] = data[key];
-                }
-            });
-        } catch (e) {
-            console.warn('Save data corrupted, resetting.', e);
-        }
+        } catch (e) { console.warn('Save corrupted', e); }
     }
     loadStatus();
+    function saveStatus() { localStorage.setItem(SAVE_KEY, JSON.stringify(unlockedStatus)); }
+    function saveTourismStatus() { localStorage.setItem(TOURISM_KEY, JSON.stringify(visitedLinks)); }
 
-    function saveStatus() {
-        localStorage.setItem(SAVE_KEY, JSON.stringify(unlockedStatus));
-    }
-
-    // --- DOM要素のキャッシュ（Null安全性向上） ---
     const ui = {
         grid: document.getElementById('grid-container'),
         detail: {
@@ -546,35 +695,30 @@
             class: document.getElementById('dino-info-class'),
             era: document.getElementById('dino-info-era'),
             origin: document.getElementById('dino-info-origin'),
-            desc: document.getElementById('dino-info-desc')
+            desc: document.getElementById('dino-info-desc'),
+            tourismContainer: document.getElementById('tourism-container'),
+            tourismTitle: document.getElementById('tourism-title'),
+            tourismDesc: document.getElementById('tourism-desc'),
+            tourismLink: document.getElementById('tourism-link'),
+            tourismDinoImg: document.getElementById('tourism-dino-img'),
+            tourismSpotImg: document.getElementById('tourism-spot-img')
         },
-        audio: document.getElementById('sfx-sparkle')
+        audio: document.getElementById('sfx-sparkle'),
+        snapAudio: document.getElementById('sfx-snap') || document.getElementById('sfx-sparkle')
     };
 
-    /**
-     * ヘルパー関数: innerHTMLを使わずに改行付きテキストを設定
-     * 安全なDOM操作の要となる関数です
-     */
     function setMultilineText(container, lines) {
         if (!container) return;
-        container.textContent = ''; // クリア
-        
-        // 文字列の場合は配列に変換
+        container.textContent = ''; 
         const lineArray = Array.isArray(lines) ? lines : [lines];
-
         lineArray.forEach((line, index) => {
             container.appendChild(document.createTextNode(line));
-            if (index < lineArray.length - 1) {
-                container.appendChild(document.createElement('br'));
-            }
+            if (index < lineArray.length - 1) container.appendChild(document.createElement('br'));
         });
     }
 
-    // --- 初期化処理 ---
-    
-    // グリッドアイテムの生成
+    // --- Grid生成 ---
     fossils.forEach(f => {
-        // innerHTMLを使わず、createElementで要素を組み立てます
         const div = document.createElement('div');
         div.className = 'fossil-item';
         div.id = `item-${f.id}`;
@@ -586,18 +730,12 @@
             setMultilineText(textDiv, ['COMING', 'SOON', '...']);
             div.appendChild(textDiv);
         } else {
-            // 画像
             const img = document.createElement('img');
-            img.src = f.img;
-            img.className = 'fossil-img';
-            img.alt = f.name;
+            img.src = f.img; img.className = 'fossil-img'; img.alt = f.name;
             
-            // ツールチップ
             const tooltip = document.createElement('div');
-            tooltip.className = 'tooltip-box';
-            tooltip.id = `tooltip-${f.id}`;
+            tooltip.className = 'tooltip-box'; tooltip.id = `tooltip-${f.id}`;
             
-            // 初期状態の判定
             if (unlockedStatus[f.id]) {
                 div.classList.add('unlocked');
                 setMultilineText(tooltip, f.desc);
@@ -609,7 +747,6 @@
             div.appendChild(img);
             div.appendChild(tooltip);
 
-            // 追加: グリッド内の著作権表示
             if (f.imageCopyright) {
                 const copyDiv = document.createElement('div');
                 copyDiv.className = 'grid-copyright';
@@ -618,9 +755,8 @@
             }
             
             div.addEventListener('click', () => {
-                if (unlockedStatus[f.id]) {
-                    showDetails(f.id);
-                } else {
+                if (unlockedStatus[f.id]) showDetails(f.id);
+                else {
                     div.style.transform = "translateX(5px)";
                     setTimeout(() => div.style.transform = "none", 100);
                 }
@@ -629,9 +765,6 @@
         ui.grid.appendChild(div);
     });
 
-    /**
-     * UI操作 (UI Logic)
-     */
     function showDetails(id) {
         const data = fossils.find(f => f.id === id);
         if (!data) return;
@@ -640,155 +773,213 @@
         const targetItem = document.getElementById(`item-${id}`);
         if(targetItem) targetItem.classList.add('selected');
 
-        // textContentを使用した安全なデータバインディング
-        if(ui.detail.name) ui.detail.name.textContent = data.name;
-        if(ui.detail.img) {
-            // 詳細画像があればそれを使い、なければ一覧画像を使う
-            ui.detail.img.src = data.detailImg || data.img;
-            ui.detail.img.alt = data.name;
+        const d = ui.detail;
+        if(d.name) d.name.textContent = data.name;
+        if(d.img) { d.img.src = data.detailImg || data.img; d.img.alt = data.name; }
+        if(d.copyright) d.copyright.textContent = data.imageCopyright || '';
+        if(d.nameOrigin) d.nameOrigin.textContent = data.data.nameOrigin;
+        if(d.size) d.size.textContent = data.data.size;
+        if(d.weight) d.weight.textContent = data.data.weight;
+        if(d.class) d.class.textContent = data.data.class;
+        if(d.era) d.era.textContent = data.data.era;
+        if(d.origin) d.origin.textContent = data.data.origin;
+        if(d.desc) d.desc.innerHTML = data.data.longDesc;
+
+        // ▼▼▼ 観光リンクの「！」マーク制御 ▼▼▼
+        if (data.data.tourism && d.tourismContainer) {
+            d.tourismContainer.style.display = 'block';
+            if(d.tourismTitle) d.tourismTitle.textContent = `🦕 ${data.data.tourism.title}`;
+            if(d.tourismDesc) d.tourismDesc.textContent = data.data.tourism.desc;
+            
+            if(d.tourismLink) {
+                d.tourismLink.href = data.data.tourism.link;
+                d.tourismLink.innerHTML = `${data.data.tourism.linkText} <div class="notification-badge">!</div>`;
+                
+                // バッジ要素を取得
+                const badge = d.tourismLink.querySelector('.notification-badge');
+                // すでに訪問済みならバッジを消す
+                if (visitedLinks[data.id]) {
+                    badge.style.display = 'none';
+                }
+
+                // クリック時の処理（訪問済みにする）
+                d.tourismLink.onclick = () => {
+                    visitedLinks[data.id] = true;
+                    saveTourismStatus();
+                    if(badge) badge.style.display = 'none';
+                };
+            }
+            
+            if(d.tourismDinoImg) {
+                d.tourismDinoImg.src = data.data.tourism.dinoImg || '';
+                d.tourismDinoImg.style.display = data.data.tourism.dinoImg ? 'block' : 'none';
+            }
+            if(d.tourismSpotImg) {
+                d.tourismSpotImg.src = data.data.tourism.spotImg || '';
+                d.tourismSpotImg.style.display = data.data.tourism.spotImg ? 'block' : 'none';
+            }
+        } else if (d.tourismContainer) {
+            d.tourismContainer.style.display = 'none';
         }
 
-        // 著作権表示の更新処理
-        if(ui.detail.copyright) {
-            // データに著作権情報があれば表示、なければ空にする
-            ui.detail.copyright.textContent = data.imageCopyright ? data.imageCopyright : '';
+        if(d.section) {
+            d.section.style.display = 'block';
+            setTimeout(() => d.section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         }
-        
-        if(ui.detail.nameOrigin) ui.detail.nameOrigin.textContent = data.data.nameOrigin;
-        if(ui.detail.size) ui.detail.size.textContent = data.data.size;
-        if(ui.detail.weight) ui.detail.weight.textContent = data.data.weight;
-        if(ui.detail.class) ui.detail.class.textContent = data.data.class;
-        if(ui.detail.era) ui.detail.era.textContent = data.data.era;
-        if(ui.detail.origin) ui.detail.origin.textContent = data.data.origin;
-        
-        if(ui.detail.desc) ui.detail.desc.textContent = data.data.longDesc;
-
-        ui.detail.section.style.display = 'block';
-        setTimeout(() => {
-            ui.detail.section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
     }
 
-    // スムーズスクロール
+    // --- UIイベント ---
     const scrollTopBtn = document.getElementById('scroll-top-btn');
-    const topLogo = document.getElementById('top-logo');
-
     window.addEventListener('scroll', () => {
         if (!scrollTopBtn) return;
-        if (window.scrollY > 200) { scrollTopBtn.classList.add('show'); }
-        else { scrollTopBtn.classList.remove('show'); }
+        scrollTopBtn.classList.toggle('show', window.scrollY > 200);
     });
-    
-    function scrollToTop(e) {
+    if(scrollTopBtn) scrollTopBtn.addEventListener('click', (e) => {
         e.preventDefault();
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    });
     
-    if(scrollTopBtn) scrollTopBtn.addEventListener('click', scrollToTop);
-    if(topLogo) topLogo.addEventListener('click', scrollToTop);
-
-    // オーディオ再生の連打対策（間引き）
     let isSoundPlaying = false;
-    function playSparkleSound() {
-        if (!ui.audio || isSoundPlaying) return;
+    function playSound(audioEl) {
+        if (!audioEl || isSoundPlaying) return;
         isSoundPlaying = true;
-        ui.audio.currentTime = 0;
-        ui.audio.volume = 1.0;
-        ui.audio.play().catch(e => console.log('Audio error:', e));
-        
-        // 0.3秒間は次の音を鳴らさない
+        audioEl.currentTime = 0; audioEl.volume = 1.0;
+        audioEl.play().catch(e => console.log('Audio error:', e));
         setTimeout(() => { isSoundPlaying = false; }, 300);
     }
 
-    /**
-     * デバッグ・開発者モード
-     */
-    let tapCount = 0;
-    let tapTimer;
-    const COPYRIGHT_TRIGGER = document.getElementById('copyright-trigger');
-    const DEBUG_SECTION = document.getElementById('debug-section');
-    const DEBUG_HANDLE = document.getElementById('debug-drag-handle');
-    const DEBUG_KEY = 'mech_debug_mode_v1'; // キー名を変更
+    // --- パズルロジック ---
+    const puzzle = {
+        overlay: document.getElementById('puzzle-overlay'),
+        target: document.getElementById('puzzle-target'),
+        piece: document.getElementById('puzzle-piece'),
+        area: document.getElementById('puzzle-play-area'),
+        currentId: null, isComplete: false
+    };
 
-    if (localStorage.getItem(DEBUG_KEY) === 'true') {
-        DEBUG_SECTION.style.display = 'block';
+    function startPuzzle(id) {
+        const data = fossils.find(f => f.id === id);
+        if (!data) return;
+        puzzle.currentId = id; puzzle.isComplete = false;
+        
+        puzzle.target.src = data.img; puzzle.piece.src = data.img;
+        const dirX = Math.random() < 0.5 ? -1 : 1;
+        const dirY = Math.random() < 0.5 ? -1 : 1;
+        const startX = dirX * (60 + Math.random() * 60);
+        const startY = dirY * (60 + Math.random() * 60);
+
+        pDrag.currentX = pDrag.xOffset = startX;
+        pDrag.currentY = pDrag.yOffset = startY;
+        setTranslate(startX, startY, puzzle.piece);
+        
+        puzzle.piece.classList.remove('snapped', 'can-snap');
+        puzzle.overlay.classList.add('active');
+        enablePuzzleEvents();
     }
 
-    if(COPYRIGHT_TRIGGER) {
-        COPYRIGHT_TRIGGER.addEventListener('click', () => {
-            tapCount++;
-            clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
-            const remaining = 7 - tapCount;
-            if (remaining > 0 && remaining <= 5) {
-                showToast(`開発者モードまであと ${remaining} 回です`);
-            }
-            if (tapCount >= 7) {
-                enableDebugMode();
-                tapCount = 0;
-            }
-        });
-    }
-
-    function enableDebugMode() {
-        if(!DEBUG_SECTION) return;
-        DEBUG_SECTION.style.display = 'block';
-        localStorage.setItem(DEBUG_KEY, 'true');
-        showToast('開発者モードが有効になりました！');
+    let pDrag = { active: false, currentX: 0, currentY: 0, initialX: 0, initialY: 0, xOffset: 0, yOffset: 0 };
+    
+    function enablePuzzleEvents() {
+        puzzle.piece.addEventListener("touchstart", onPuzzleDragStart, {passive: false});
+        puzzle.piece.addEventListener("mousedown", onPuzzleDragStart);
+        document.addEventListener("touchend", onPuzzleDragEnd);
+        document.addEventListener("touchmove", onPuzzleDrag, {passive: false});
+        document.addEventListener("mouseup", onPuzzleDragEnd);
+        document.addEventListener("mousemove", onPuzzleDrag);
     }
     
-    function disableDebugMode() {
-        if(!DEBUG_SECTION) return;
-        DEBUG_SECTION.style.display = 'none';
-        localStorage.removeItem(DEBUG_KEY);
-        showToast('開発者モードを終了しました');
-    }
-    
-    function resetCollection() {
-        Object.keys(unlockedStatus).forEach(key => unlockedStatus[key] = false);
-        localStorage.removeItem(SAVE_KEY); // 保存データも削除
-
-        fossils.forEach(f => {
-            if (f.type === 'coming_soon') return;
-            const item = document.getElementById(`item-${f.id}`);
-            const tooltip = document.getElementById(`tooltip-${f.id}`);
-            
-            if(item) {
-                item.classList.add('locked');
-                item.classList.remove('unlocked', 'just-unlocked', 'selected');
-            }
-            // 安全なテキスト設定
-            setMultilineText(tooltip, f.hint);
-        });
-        ui.detail.section.style.display = 'none';
-        showToast('図鑑をリセットしました');
-    }
-    
-    function showToast(message) {
-        const toast = document.getElementById('toast');
-        if(!toast) return;
-        toast.innerText = message;
-        toast.classList.add('show');
-        setTimeout(() => { toast.classList.remove('show'); }, 2000);
+    function disablePuzzleEvents() {
+        puzzle.piece.removeEventListener("touchstart", onPuzzleDragStart);
+        puzzle.piece.removeEventListener("mousedown", onPuzzleDragStart);
+        document.removeEventListener("touchend", onPuzzleDragEnd);
+        document.removeEventListener("touchmove", onPuzzleDrag);
+        document.removeEventListener("mouseup", onPuzzleDragEnd);
+        document.removeEventListener("mousemove", onPuzzleDrag);
     }
 
-    // --- NFCシミュレーション ---
+    function onPuzzleDragStart(e) {
+        if(puzzle.isComplete) return;
+        e.preventDefault();
+        pDrag.active = true;
+        const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        pDrag.initialX = clientX - pDrag.xOffset;
+        pDrag.initialY = clientY - pDrag.yOffset;
+    }
+
+    function onPuzzleDragEnd(e) {
+        if(!pDrag.active) return;
+        pDrag.initialX = pDrag.currentX;
+        pDrag.initialY = pDrag.currentY;
+        pDrag.active = false;
+        if (getSnapDistance() < 80) puzzleSuccess();
+    }
+
+    function onPuzzleDrag(e) {
+        if (!pDrag.active) return;
+        e.preventDefault();
+        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        
+        let nextX = clientX - pDrag.initialX;
+        let nextY = clientY - pDrag.initialY;
+
+        const pieceRect = puzzle.piece.getBoundingClientRect();
+        const limitX = (window.innerWidth / 2) - ((pieceRect.width || 200) / 2) - 20;
+        const limitY = (window.innerHeight / 2) - ((pieceRect.height || 200) / 2) - 20;
+
+        nextX = Math.max(-limitX, Math.min(nextX, limitX));
+        nextY = Math.max(-limitY, Math.min(nextY, limitY));
+        
+        pDrag.currentX = pDrag.xOffset = nextX;
+        pDrag.currentY = pDrag.yOffset = nextY;
+        setTranslate(nextX, nextY, puzzle.piece);
+
+        puzzle.piece.classList.toggle('can-snap', getSnapDistance() < 80);
+    }
+    
+    function setTranslate(x, y, el) {
+        el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+    }
+
+    function getSnapDistance() {
+        const tRect = puzzle.target.getBoundingClientRect();
+        const pRect = puzzle.piece.getBoundingClientRect();
+        return Math.hypot(
+            (tRect.left + tRect.width/2) - (pRect.left + pRect.width/2),
+            (tRect.top + tRect.height/2) - (pRect.top + pRect.height/2)
+        );
+    }
+
+    function puzzleSuccess() {
+        if(puzzle.isComplete) return;
+        puzzle.isComplete = true;
+        puzzle.piece.classList.remove('can-snap');
+        puzzle.piece.classList.add('snapped');
+        setTranslate(0, 0, puzzle.piece);
+        setTimeout(() => {
+            playSound(ui.snapAudio); 
+            setTimeout(() => {
+                puzzle.overlay.classList.remove('active');
+                disablePuzzleEvents();
+                unlockFossilEffect(puzzle.currentId);
+            }, 500); 
+        }, 300); 
+    }
+
     function simulateNFC(id) {
-        // 既に発見済みなら何もしない
         if (!fossils.find(f => f.id === id) || unlockedStatus[id]) return;
-        unlockFossilEffect(id);
+        startPuzzle(id);
     }
 
     function unlockFossilEffect(id) {
         const item = document.getElementById(`item-${id}`);
         const data = fossils.find(f => f.id === id);
         
-        playSparkleSound();
-
+        playSound(ui.audio);
         unlockedStatus[id] = true;
         saveStatus();
 
-        // ツールチップ更新（安全な書き方）
         const tooltip = document.getElementById(`tooltip-${id}`);
         setMultilineText(tooltip, data.desc);
         
@@ -798,6 +989,8 @@
             setTimeout(() => item.classList.remove('just-unlocked'), 600);
             createSparkles(item);
         }
+        showDetails(id);
+        showToast('復元完了！図鑑に登録されました！');
     }
 
     function createSparkles(element) {
@@ -806,111 +999,218 @@
             sparkle.classList.add('sparkle-particle');
             const angle = Math.random() * 360; 
             const distance = 60 + Math.random() * 80;
-            const tx = Math.cos(angle * Math.PI / 180) * distance + 'px';
-            const ty = Math.sin(angle * Math.PI / 180) * distance + 'px';
-            sparkle.style.setProperty('--tx', tx);
-            sparkle.style.setProperty('--ty', ty);
+            sparkle.style.setProperty('--tx', (Math.cos(angle * Math.PI / 180) * distance) + 'px');
+            sparkle.style.setProperty('--ty', (Math.sin(angle * Math.PI / 180) * distance) + 'px');
             sparkle.style.animationDelay = (Math.random() * 0.2) + 's';
             element.appendChild(sparkle);
             setTimeout(() => sparkle.remove(), 1000);
         }
     }
 
-    // --- ドラッグ移動処理 ---
-    let isDragging = false;
-    let currentX;
-    let currentY;
-    let initialX;
-    let initialY;
-    let xOffset = 0;
-    let yOffset = 0;
+    // --- デバッグモード ---
+    let isDebugDragging = false; 
+    let debugStartX, debugStartY, debugInitX, debugInitY;
+    let debugXOffset = 0, debugYOffset = 0;
+    const DEBUG_HANDLE = document.getElementById('debug-drag-handle');
 
     if (DEBUG_HANDLE) {
-        DEBUG_HANDLE.addEventListener("mousedown", dragStart);
-        document.addEventListener("mouseup", dragEnd);
-        document.addEventListener("mousemove", drag);
-
-        DEBUG_HANDLE.addEventListener("touchstart", dragStart, {passive: false});
-        document.addEventListener("touchend", dragEnd);
-        document.addEventListener("touchmove", drag, {passive: false});
-    }
-
-    function dragStart(e) {
-        if (e.type === "touchstart") {
-            initialX = e.touches[0].clientX - xOffset;
-            initialY = e.touches[0].clientY - yOffset;
-        } else {
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-        }
-
-        if (e.target === DEBUG_HANDLE) {
-            isDragging = true;
-        }
-    }
-
-    function dragEnd(e) {
-        initialX = currentX;
-        initialY = currentY;
-        isDragging = false;
-    }
-
-    function drag(e) {
-        if (isDragging) {
+        const start = (e) => {
+            const cX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+            const cY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+            debugInitX = cX - debugXOffset; debugInitY = cY - debugYOffset;
+            if(e.target === DEBUG_HANDLE) isDebugDragging = true;
+        };
+        const end = () => { isDebugDragging = false; };
+        const move = (e) => {
+            if(!isDebugDragging) return;
             e.preventDefault();
-            if (e.type === "touchmove") {
-                currentX = e.touches[0].clientX - initialX;
-                currentY = e.touches[0].clientY - initialY;
-            } else {
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
-            }
+            const cX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+            const cY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+            debugXOffset = cX - debugInitX; debugYOffset = cY - debugInitY;
+            const el = document.getElementById('debug-section');
+            if(el) el.style.transform = `translate3d(${debugXOffset}px, ${debugYOffset}px, 0)`;
+        };
+        DEBUG_HANDLE.addEventListener("mousedown", start);
+        document.addEventListener("mouseup", end);
+        document.addEventListener("mousemove", move);
+        DEBUG_HANDLE.addEventListener("touchstart", start, {passive: false});
+        document.addEventListener("touchend", end);
+        document.addEventListener("touchmove", move, {passive: false});
+    }
 
-            xOffset = currentX;
-            yOffset = currentY;
+    // デバッグトリガー
+    let tapCount = 0, tapTimer;
+    const COPYRIGHT_TRIGGER = document.getElementById('copyright-trigger');
+    const DEBUG_SECTION = document.getElementById('debug-section');
+    const DEBUG_KEY = 'mech_debug_mode_v1';
 
-            if(DEBUG_SECTION) {
-                DEBUG_SECTION.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+    if (localStorage.getItem(DEBUG_KEY) === 'true' && DEBUG_SECTION) DEBUG_SECTION.style.display = 'block';
+
+    if(COPYRIGHT_TRIGGER) {
+        COPYRIGHT_TRIGGER.addEventListener('click', () => {
+            tapCount++; clearTimeout(tapTimer);
+            tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
+            const remaining = 7 - tapCount;
+            if (remaining > 0 && remaining <= 5) showToast(`開発者モードまであと ${remaining} 回です`);
+            if (tapCount >= 7) {
+                if(DEBUG_SECTION) DEBUG_SECTION.style.display = 'block';
+                localStorage.setItem(DEBUG_KEY, 'true');
+                showToast('開発者モードが有効になりました！');
+                tapCount = 0;
             }
+        });
+    }
+
+    function disableDebugMode() {
+        if(DEBUG_SECTION) DEBUG_SECTION.style.display = 'none';
+        localStorage.removeItem(DEBUG_KEY);
+        showToast('開発者モードを終了しました');
+    }
+    
+    function resetCollection() {
+        Object.keys(unlockedStatus).forEach(key => unlockedStatus[key] = false);
+        // 訪問履歴もリセット
+        visitedLinks = {};
+        localStorage.removeItem(SAVE_KEY); 
+        localStorage.removeItem(TOURISM_KEY);
+
+        fossils.forEach(f => {
+            if (f.type === 'coming_soon') return;
+            const item = document.getElementById(`item-${f.id}`);
+            const tooltip = document.getElementById(`tooltip-${f.id}`);
+            if(item) {
+                item.classList.add('locked');
+                item.classList.remove('unlocked', 'just-unlocked', 'selected');
+            }
+            setMultilineText(tooltip, f.hint);
+        });
+        if(ui.detail.section) ui.detail.section.style.display = 'none';
+        showToast('図鑑をリセットしました');
+    }
+    
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        if(!toast) return;
+        toast.innerText = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // --- カメラ機能ロジック ---
+    const cameraUI = {
+        btn: document.getElementById('camera-open-btn'),
+        overlay: document.getElementById('camera-overlay'),
+        video: document.getElementById('camera-video'),
+        close: document.getElementById('camera-close-btn'),
+        shutter: document.getElementById('camera-shutter-btn'),
+        stream: null
+    };
+
+    if (cameraUI.btn) {
+        cameraUI.btn.addEventListener('click', async () => {
+            // カメラ起動
+            try {
+                const constraints = { 
+                    video: { facingMode: 'environment' },
+                    audio: false 
+                };
+                cameraUI.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                cameraUI.video.srcObject = cameraUI.stream;
+                cameraUI.overlay.classList.add('active');
+                
+                await cameraUI.video.play();
+                showToast('カメラを起動しました');
+
+            } catch (err) {
+                console.error('Camera Error:', err);
+                alert('カメラの使用が許可されていないか、対応していないデバイスです。\n設定を確認してください。');
+            }
+        });
+    }
+
+    function stopCamera() {
+        if (cameraUI.stream) {
+            cameraUI.stream.getTracks().forEach(track => track.stop());
+            cameraUI.stream = null;
+        }
+        cameraUI.overlay.classList.remove('active');
+        if(aiResultBox) {
+            aiResultBox.classList.remove('show');
+            aiResultBox.innerText = "AI準備中...";
         }
     }
 
-    // --- URLパラメータ（QRコード/NFCタグ読み取り）からの自動解除処理 ---
-    function checkURLForUnlocks() {
-        // 1. URLの ?part=xxx 部分を取得 (例: ?part=ammonite)
-        const params = new URLSearchParams(window.location.search);
-        const targetId = params.get('part'); // "part"という名前のパラメータを探す
+    if (cameraUI.close) {
+        cameraUI.close.addEventListener('click', stopCamera);
+    }
 
-        // 2. IDが指定されている場合のみ処理
-        if (targetId) {
-            // 3. そのIDが図鑑データに存在するか確認
-            const isValidId = fossils.some(f => f.id === targetId);
-            
-            if (isValidId) {
-                // ページ読み込み直後だと描画が間に合わないことがあるので、少し待ってから実行
-                setTimeout(() => {
-                    // まだ解除されていない場合のみ解除エフェクトを実行
-                    if (!unlockedStatus[targetId]) {
-                        unlockFossilEffect(targetId);
-                        showToast('新しい化石を発見しました！');
+    // シャッターボタン（AI解析）
+    if (cameraUI.shutter) {
+        cameraUI.shutter.addEventListener('click', async () => {
+            // 1. 演出
+            playSound(ui.snapAudio);
+            const flash = document.createElement('div');
+            flash.style.position = 'absolute';
+            flash.style.top = '0'; flash.style.left = '0';
+            flash.style.width = '100%'; flash.style.height = '100%';
+            flash.style.background = '#fff'; flash.style.opacity = '1';
+            flash.style.transition = 'opacity 0.5s';
+            cameraUI.overlay.appendChild(flash);
+            setTimeout(() => { flash.style.opacity = '0'; }, 50);
+            setTimeout(() => { flash.remove(); }, 500);
+
+            // 2. AI解析実行
+            if (aiModel) {
+                aiResultBox.innerText = "AI解析中...";
+                aiResultBox.classList.add('show');
+                
+                try {
+                    const predictions = await aiModel.detect(cameraUI.video);
+                    console.log("Predictions:", predictions);
+
+                    if (predictions.length > 0) {
+                        const best = predictions[0];
+                        const label = best.class;
+                        const score = Math.round(best.score * 100);
+
+                        let jaLabel = label;
+                        if(label === 'person') jaLabel = '人 (Human)';
+                        else if(label === 'cup') jaLabel = 'コップ';
+                        else if(label === 'chair') jaLabel = '椅子';
+                        else if(label === 'book') jaLabel = '本';
+                        else if(label === 'cat') jaLabel = '猫';
+                        else if(label === 'dog') jaLabel = '犬';
+                        else if(label === 'cell phone') jaLabel = 'スマホ';
+                        else if(label === 'laptop') jaLabel = 'パソコン';
+
+                        aiResultBox.innerText = `検出: ${jaLabel} (${score}%)`;
                     } else {
-                        // 既に解除済みの場合は詳細を表示してあげる
-                        showDetails(targetId);
-                        showToast('この化石はすでに発見済みです');
+                        aiResultBox.innerText = "検出不能 (Unknown)";
                     }
-
-                    // そのアイテムの場所までスクロールする
-                    const item = document.getElementById(`item-${targetId}`);
-                    if (item) {
-                        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 800); // 0.8秒待機（演出を見逃さないための"溜め"）
+                } catch (e) {
+                    console.error(e);
+                    aiResultBox.innerText = "エラーが発生しました";
+                }
+            } else {
+                showToast('AIモデルをロード中です...');
             }
-        }
+        });
     }
 
-    // 最後にこのチェック関数を実行
-    checkURLForUnlocks();
+    // URLチェック
+    const params = new URLSearchParams(window.location.search);
+    const targetId = params.get('part');
+    if (targetId && fossils.some(f => f.id === targetId)) {
+        setTimeout(() => {
+            if (!unlockedStatus[targetId]) startPuzzle(targetId);
+            else {
+                showDetails(targetId);
+                showToast('この化石はすでに発見済みです');
+                const item = document.getElementById(`item-${targetId}`);
+                if (item) item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 800); 
+    }
 </script>
 
 </body>
